@@ -1,137 +1,122 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line2.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ccepre <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/11/14 16:24:10 by ccepre            #+#    #+#             */
-/*   Updated: 2018/11/16 18:06:46 by ccepre           ###   ########.fr       */
+/*   Created: 2018/11/17 11:50:03 by ccepre            #+#    #+#             */
+/*   Updated: 2018/11/20 15:22:38 by ccepre           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include "libft.h"
+#include "libft/libft.h"
 
-static int isline(char **line)
-{
-	size_t i;
-
-	i = 0;
-	while ((*line)[i])
-	{
-		if ((*line)[i] == '\n')
-			return (1);
-		i++;
-	}
-	return (0);
-}
-
-
-static void	cat_buf(char *buf, char **line)
-{
-	char *s;
-
-	s = ft_strjoin(*line, buf);
-//	free(*line);
-	*line = s;
-}
-
-static int	save(int fd, char **line, t_lst_save **lst)
+static int			save(const int fd, char *rest, t_lst_save **lst)
 {
 	t_lst_save	*current;
 	t_lst_save	*tmp;
-	char		*rest;
 
-	rest = ft_strchr(*line, 10);
-	if (!(rest = ft_strdup(++rest)))
-		return (1);
+	if (!(tmp = (t_lst_save*)malloc(sizeof(t_lst_save))))
+		return (0);
 	current = *lst;
-	while(current)
+	while (current)
 	{
-		if (current->fd == fd)
+		if (current->fd == (int)fd)
 		{
-			free(current->content);
 			current->content = rest;
-			return (0);
+			return (1);
 		}
 		current = current->next;
 	}
-	if (!(tmp = (t_lst_save*)malloc(sizeof(t_lst_save))))
-		return (1);
 	tmp->content = rest;
-	tmp->fd = fd;
+	tmp->fd = (int)fd;
 	current = *lst;
 	tmp->next = current;
 	*lst = tmp;
-	printf("SAVED : %s\n", (*lst)->content);
+	return (1);
+}
+
+static int			last_line(int fd, char **line, int ret, t_lst_save **lst, char **s)
+{
+	if (ret == 0 && ft_strcmp(*s, "\0") != 0)
+	{
+		if (!(save(fd, "\0", lst)))
+			return (-1);
+		ft_strdel(line);
+		*line = *s;
+		ft_strdel(s);
+		return (1);
+	}
 	return (0);
 }
 
-static t_lst_save	**getback(int fd, char **line)
+static int			set_line(const int fd, t_lst_save **lst, char **line, char **s)
 {
+	size_t	i;
+	char	*rest;
+
+	i = 0;
+	while ((*s)[i] != 10 && (*s)[i] != 0)
+		i++;
+	if (!(rest = ft_strdup(&(*s)[i + 1])))
+		return (-1);
+	if (!(save(fd, rest, lst)))
+		return (-1);
+	*line = ft_strsub(*s, 0, i);
+	ft_strdel(s);
+	free(s);
+	return (1);
+}
+
+static int			set_back(int fd, char **line, t_lst_save **lst, char **s)
+{
+	t_lst_save *current;
+
+	if (!line)
+		return (-1);
+	current = *lst;
+	while (current)
+	{
+		if (current->fd == (int)fd)
+			*s = current->content;
+		current = current->next;
+	}
+	if (ft_strchr(*s, 10))
+		return (set_line(fd, lst, line, s));
+	return (0);
+}
+
+int					get_next_line(const int fd, char **line)
+{
+	int					ret;
 	static t_lst_save	**lst;
+	char				buf[BUFF_SIZE + 1];
+	char				**s;
 
 	if (!(lst))
 	{
 		if (!(lst = (t_lst_save**)malloc(sizeof(t_lst_save*))))
-			return (NULL);
+			return (-1);
 		*lst = NULL;
 	}
-	while (*lst)
-	{
-		if ((*lst)->fd == (size_t)fd)
-		{
-			*line = (*lst)->content;
-			printf("FOUND\n");
-			return (lst);
-		}
-		(*lst) = (*lst)->next;
-	}
-	return (lst);
-}
-
-static int set_line(int fd, t_lst_save **lst, char **line)
-{
-	size_t i;
-
-	if (save(fd, line, lst))
-		return (1);
-	i = -1;
-	while((*line)[++i])
-	{
-		if ((*line)[i] == '\n')
-			(*line)[i + 1] = 0;
-	}
-	return (0);
-}
-
-int get_next_line(const int fd, char **line)
-{
-	int		ret;
-	t_lst_save	**lst;
-	char 	buf[BUF_SIZE + 1];
-
-	if (!line)
-		return (0);
-	if (!(*line = (char*)malloc(1)))
-		return (0);
-	lst = getback(fd, line);
-	//printf("line get backed : %s\n", *line);
-	if (!(lst))
-		return (1);
-	if (isline(line))
-		return (set_line(fd, lst, line));
-	while ((ret = read(fd, buf, BUF_SIZE)))
+	if (!(s = (char**)malloc(sizeof(char*))))
+		return (-1);
+	*s = ft_strnew(1);
+	ret = set_back(fd, line, lst, s);
+	if (ret)
+		return (ret);
+	while ((ret = read(fd, buf, BUFF_SIZE)))
 	{
 		if (ret == -1)
-			return (1);
+			return (-1);
 		buf[ret] = 0;
-		cat_buf(buf, line);
-		if (isline(line))
-		{
-			return (set_line(fd, lst, line));
-		}
+		*line = *s;
+		*s = ft_strjoin(*s, buf);
+		ft_strdel(line);
+		if (ft_strchr(*s, 10))
+			return (set_line(fd, lst, line, s));
 	}
-	return (0);
+	return (last_line(fd, line, ret, lst, s));
 }
