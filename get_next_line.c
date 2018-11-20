@@ -6,7 +6,7 @@
 /*   By: ccepre <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/17 11:50:03 by ccepre            #+#    #+#             */
-/*   Updated: 2018/11/20 15:22:38 by ccepre           ###   ########.fr       */
+/*   Updated: 2018/11/20 16:24:54 by ccepre           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,21 +38,17 @@ static int			save(const int fd, char *rest, t_lst_save **lst)
 	return (1);
 }
 
-static int			last_line(int fd, char **line, int ret, t_lst_save **lst, char **s)
+static int			last_line(int fd, char **line, t_lst_save **lst, char **s)
 {
-	if (ret == 0 && ft_strcmp(*s, "\0") != 0)
-	{
-		if (!(save(fd, "\0", lst)))
-			return (-1);
-		ft_strdel(line);
-		*line = *s;
-		ft_strdel(s);
-		return (1);
-	}
-	return (0);
+	if (!(save(fd, "\0", lst)))
+		return (-1);
+	*line = *s;
+	ft_strdel(s);
+	return (1);
 }
 
-static int			set_line(const int fd, t_lst_save **lst, char **line, char **s)
+static int			set_line(const int fd, t_lst_save **lst\
+		, char **line, char **s)
 {
 	size_t	i;
 	char	*rest;
@@ -70,12 +66,19 @@ static int			set_line(const int fd, t_lst_save **lst, char **line, char **s)
 	return (1);
 }
 
-static int			set_back(int fd, char **line, t_lst_save **lst, char **s)
+static t_lst_save	**set_back(int fd, char **line, t_lst_save **lst, char **s)
 {
 	t_lst_save *current;
 
+	*s = ft_strnew(1);
 	if (!line)
-		return (-1);
+		return (NULL);
+	if (!(lst))
+	{
+		if (!(lst = (t_lst_save**)malloc(sizeof(t_lst_save*))))
+			return (NULL);
+		*lst = NULL;
+	}
 	current = *lst;
 	while (current)
 	{
@@ -83,9 +86,7 @@ static int			set_back(int fd, char **line, t_lst_save **lst, char **s)
 			*s = current->content;
 		current = current->next;
 	}
-	if (ft_strchr(*s, 10))
-		return (set_line(fd, lst, line, s));
-	return (0);
+	return (lst);
 }
 
 int					get_next_line(const int fd, char **line)
@@ -95,18 +96,12 @@ int					get_next_line(const int fd, char **line)
 	char				buf[BUFF_SIZE + 1];
 	char				**s;
 
-	if (!(lst))
-	{
-		if (!(lst = (t_lst_save**)malloc(sizeof(t_lst_save*))))
-			return (-1);
-		*lst = NULL;
-	}
-	if (!(s = (char**)malloc(sizeof(char*))))
+	if (BUFF_SIZE < 1 || !(s = (char**)malloc(sizeof(char*))))
 		return (-1);
-	*s = ft_strnew(1);
-	ret = set_back(fd, line, lst, s);
-	if (ret)
-		return (ret);
+	if (!(lst = set_back(fd, line, lst, s)))
+		return (-1);
+	if (ft_strchr(*s, 10))
+		return (set_line(fd, lst, line, s));
 	while ((ret = read(fd, buf, BUFF_SIZE)))
 	{
 		if (ret == -1)
@@ -118,5 +113,7 @@ int					get_next_line(const int fd, char **line)
 		if (ft_strchr(*s, 10))
 			return (set_line(fd, lst, line, s));
 	}
-	return (last_line(fd, line, ret, lst, s));
+	if (ret == 0 && ft_strcmp(*s, "\0") != 0)
+		return (last_line(fd, line, lst, s));
+	return (0);
 }

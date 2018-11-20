@@ -6,7 +6,7 @@
 /*   By: ccepre <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/17 11:57:22 by ccepre            #+#    #+#             */
-/*   Updated: 2018/11/20 14:08:31 by ccepre           ###   ########.fr       */
+/*   Updated: 2018/11/20 16:25:21 by ccepre           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
-# define BUFF_SIZE 200
+# define BUFF_SIZE 1
 
 int						get_next_line(const int fd, char **line);
 

@@ -6,7 +6,7 @@
 /*   By: ccepre <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/19 10:30:11 by ccepre            #+#    #+#             */
-/*   Updated: 2018/11/20 14:23:04 by ccepre           ###   ########.fr       */
+/*   Updated: 2018/11/20 15:57:36 by ccepre           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,17 +42,17 @@ int main(int argc, char *argv[])
 		return (0);
 	
 	fd1 = open(argv[1], O_RDONLY);
-	get_next_line(fd1, line);
+	printf("ret : %d\n", get_next_line(fd1, line));
 	printf("OUTPUT : |%s|\n", *line);
 
 	fd2 = open(argv[2], O_RDONLY);
-	get_next_line(fd2, line);
+	printf("ret : %d\n", get_next_line(fd2, line));
 	printf("OUTPUT : |%s|\n", *line);
-	get_next_line(fd2, line);
+	printf("ret : %d\n", get_next_line(fd2, line));
 	printf("OUTPUT : |%s|\n", *line);
 	close(fd2);
 	
-	get_next_line(fd1, line);
+	printf("ret : %d\n", get_next_line(fd1, line));
 	printf("OUTPUT : |%s|\n", *line);
 	close(fd1);
 	return (0);
